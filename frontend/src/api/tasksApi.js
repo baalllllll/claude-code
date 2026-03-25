@@ -1,8 +1,15 @@
 const BASE = '/api/tasks';
 
+function getToken() {
+  return localStorage.getItem('token');
+}
+
 async function request(url, options = {}) {
   const res = await fetch(url, {
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${getToken()}`,
+    },
     ...options,
   });
   const data = await res.json();

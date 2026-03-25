@@ -4,18 +4,16 @@ import { EditOutlined, DeleteOutlined, CalendarOutlined } from '@ant-design/icon
 const { Text, Paragraph } = Typography;
 
 const STATUS_CONFIG = {
-  todo:         { color: 'gold',  label: 'รอดำเนินการ' },
-  'in-progress':{ color: 'blue',  label: 'กำลังดำเนินการ' },
-  done:         { color: 'green', label: 'เสร็จแล้ว' },
+  todo:          { color: 'gold',  label: 'รอดำเนินการ' },
+  'in-progress': { color: 'blue',  label: 'กำลังดำเนินการ' },
+  done:          { color: 'green', label: 'เสร็จแล้ว' },
 };
 
 const PRIORITY_CONFIG = {
-  high:   { color: 'red',    label: 'สูง' },
-  medium: { color: 'blue',   label: 'กลาง' },
-  low:    { color: 'default',label: 'ต่ำ' },
+  high:   { color: 'orange', label: 'สูง' },
+  medium: { color: 'geekblue', label: 'กลาง' },
+  low:    { color: 'cyan',   label: 'ต่ำ' },
 };
-
-const BORDER_COLOR = { high: '#ef4444', medium: '#3b82f6', low: '#10b981' };
 
 export function TaskCard({ task, onEdit, onDelete, onStatusChange }) {
   const s = STATUS_CONFIG[task.status];
@@ -24,7 +22,7 @@ export function TaskCard({ task, onEdit, onDelete, onStatusChange }) {
   return (
     <Card
       size="small"
-      style={{ borderLeft: `4px solid ${BORDER_COLOR[task.priority]}` }}
+      className={`task-card-${task.priority}`}
       styles={{ body: { padding: '14px 16px' } }}
       actions={[
         <Select
