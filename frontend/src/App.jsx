@@ -1,11 +1,16 @@
 import { useState } from 'react';
+import { Layout, Typography, Button, Modal, Spin, Alert, Empty, Row, Col, Statistic, App as AntApp } from 'antd';
+import { PlusOutlined, ClockCircleOutlined, SyncOutlined, CheckCircleOutlined } from '@ant-design/icons';
 import { useTasks } from './hooks/useTasks.js';
 import { FilterBar } from './components/FilterBar.jsx';
 import { TaskCard } from './components/TaskCard.jsx';
 import { TaskForm } from './components/TaskForm.jsx';
-import { Modal } from './components/Modal.jsx';
+
+const { Header, Content } = Layout;
+const { Title } = Typography;
 
 export default function App() {
+  const { modal } = AntApp.useApp();
   const { tasks, loading, error, filter, setFilter, createTask, updateTask, deleteTask } = useTasks();
   const [showCreate, setShowCreate] = useState(false);
   const [editTask, setEditTask] = useState(null);
@@ -21,13 +26,14 @@ export default function App() {
   }
 
   async function handleDelete(id) {
-    if (confirm('ต้องการลบงานนี้ใช่ไหม?')) {
-      await deleteTask(id);
-    }
-  }
-
-  async function handleStatusChange(id, status) {
-    await updateTask(id, { status });
+    modal.confirm({
+      title: 'ลบงาน',
+      content: 'ต้องการลบงานนี้ใช่ไหม?',
+      okText: 'ลบ',
+      okType: 'danger',
+      cancelText: 'ยกเลิก',
+      onOk: () => deleteTask(id),
+    });
   }
 
   const counts = {
@@ -37,60 +43,94 @@ export default function App() {
   };
 
   return (
-    <div className="app">
-      <header className="app-header">
-        <div className="header-content">
-          <h1>📋 Task Tracker</h1>
-          <button className="btn btn-primary" onClick={() => setShowCreate(true)}>
-            + เพิ่มงาน
-          </button>
+    <Layout style={{ minHeight: '100vh', background: '#f5f5f5' }}>
+      <Header style={{ background: '#fff', padding: '0 24px', borderBottom: '1px solid #f0f0f0', height: 'auto' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 0 12px' }}>
+          <Title level={3} style={{ margin: 0, color: '#4f46e5' }}>📋 Task Tracker</Title>
+          <Button type="primary" icon={<PlusOutlined />} onClick={() => setShowCreate(true)}>
+            เพิ่มงาน
+          </Button>
         </div>
-        <div className="stats">
-          <span className="stat status-todo">{counts.todo} รอดำเนินการ</span>
-          <span className="stat status-in-progress">{counts['in-progress']} กำลังดำเนินการ</span>
-          <span className="stat status-done">{counts.done} เสร็จแล้ว</span>
-        </div>
-      </header>
+        <Row gutter={32} style={{ paddingBottom: 12 }}>
+          <Col>
+            <Statistic
+              title="รอดำเนินการ"
+              value={counts.todo}
+              prefix={<ClockCircleOutlined style={{ color: '#faad14' }} />}
+              valueStyle={{ color: '#faad14', fontSize: 20 }}
+            />
+          </Col>
+          <Col>
+            <Statistic
+              title="กำลังดำเนินการ"
+              value={counts['in-progress']}
+              prefix={<SyncOutlined style={{ color: '#1677ff' }} />}
+              valueStyle={{ color: '#1677ff', fontSize: 20 }}
+            />
+          </Col>
+          <Col>
+            <Statistic
+              title="เสร็จแล้ว"
+              value={counts.done}
+              prefix={<CheckCircleOutlined style={{ color: '#52c41a' }} />}
+              valueStyle={{ color: '#52c41a', fontSize: 20 }}
+            />
+          </Col>
+        </Row>
+      </Header>
 
-      <main className="app-main">
+      <Content style={{ padding: 24, maxWidth: 1200, margin: '0 auto', width: '100%' }}>
         <FilterBar current={filter} onChange={setFilter} />
 
-        {loading && <div className="state-msg">กำลังโหลด...</div>}
-        {error && <div className="state-msg error">เกิดข้อผิดพลาด: {error}</div>}
-
-        {!loading && !error && tasks.length === 0 && (
-          <div className="empty-state">
-            <p>ยังไม่มีงาน</p>
-            <button className="btn btn-primary" onClick={() => setShowCreate(true)}>
-              เพิ่มงานแรก
-            </button>
+        {loading && (
+          <div style={{ textAlign: 'center', padding: 80 }}>
+            <Spin size="large" tip="กำลังโหลด..." />
           </div>
         )}
 
-        <div className="task-grid">
+        {error && <Alert type="error" message={`เกิดข้อผิดพลาด: ${error}`} showIcon style={{ marginBottom: 16 }} />}
+
+        {!loading && !error && tasks.length === 0 && (
+          <Empty description="ยังไม่มีงาน" style={{ marginTop: 80 }}>
+            <Button type="primary" icon={<PlusOutlined />} onClick={() => setShowCreate(true)}>
+              เพิ่มงานแรก
+            </Button>
+          </Empty>
+        )}
+
+        <Row gutter={[16, 16]}>
           {tasks.map((task) => (
-            <TaskCard
-              key={task.id}
-              task={task}
-              onEdit={setEditTask}
-              onDelete={handleDelete}
-              onStatusChange={handleStatusChange}
-            />
+            <Col key={task.id} xs={24} sm={12} lg={8}>
+              <TaskCard
+                task={task}
+                onEdit={setEditTask}
+                onDelete={handleDelete}
+                onStatusChange={(id, status) => updateTask(id, { status })}
+              />
+            </Col>
           ))}
-        </div>
-      </main>
+        </Row>
+      </Content>
 
-      {showCreate && (
-        <Modal title="เพิ่มงานใหม่" onClose={() => setShowCreate(false)}>
-          <TaskForm onSubmit={handleCreate} onCancel={() => setShowCreate(false)} />
-        </Modal>
-      )}
+      <Modal
+        title="เพิ่มงานใหม่"
+        open={showCreate}
+        onCancel={() => setShowCreate(false)}
+        footer={null}
+        destroyOnHidden
+      >
+        <TaskForm onSubmit={handleCreate} onCancel={() => setShowCreate(false)} />
+      </Modal>
 
-      {editTask && (
-        <Modal title="แก้ไขงาน" onClose={() => setEditTask(null)}>
-          <TaskForm initial={editTask} onSubmit={handleEdit} onCancel={() => setEditTask(null)} />
-        </Modal>
-      )}
-    </div>
+      <Modal
+        title="แก้ไขงาน"
+        open={!!editTask}
+        onCancel={() => setEditTask(null)}
+        footer={null}
+        destroyOnHidden
+      >
+        <TaskForm initial={editTask} onSubmit={handleEdit} onCancel={() => setEditTask(null)} />
+      </Modal>
+    </Layout>
   );
 }
